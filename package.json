@@ -1,0 +1,39 @@
+{
+  "name": "primeiro-projeto",
+  "version": "1.0.2",
+  "description": "A simple CAP project.",
+  "repository": "<Add your repository here>",
+  "license": "UNLICENSED",
+  "private": true,
+  "dependencies": {
+    "@sap/cds": "^8",
+    "express": "^4",
+    "@cap-js/hana": "^1",
+    "@sap/xssec": "^4"
+  },
+  "devDependencies": {
+    "@cap-js/cds-types": "^0.7.0",
+    "@cap-js/sqlite": "^1",
+    "@sap/cds-dk": "^8"
+  },
+  "scripts": {
+    "start": "cds-serve",
+    "watch-produtos": "cds watch --open produtos/webapp/index.html?sap-ui-xx-viewCache=false",
+    "watch-fornecedores": "cds watch --open fornecedores/webapp/index.html?sap-ui-xx-viewCache=false"
+  },
+  "sapux": [
+    "app/produtos",
+    "app/fornecedores"
+  ],
+  "cds": {
+    "sql": {
+      "native_hana_associations": false
+    },
+    "requires": {
+      "[production]": {
+        "html5-repo": true,
+        "auth": "xsuaa"
+      }
+    }
+  }
+}

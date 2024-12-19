@@ -1,0 +1,174 @@
+_schema-version: 3.3.0
+ID: primeiro-projeto
+version: 1.0.4
+description: "A simple CAP project."
+parameters:
+  enable-parallel-deployments: true
+  deploy_mode: html5-repo
+build-parameters:
+  before-all:
+    - builder: custom
+      commands:
+        - npm ci
+        - npx cds build --production
+modules:
+  - name: primeiro-projeto-srv
+    type: nodejs
+    path: gen/srv
+    parameters:
+      buildpack: nodejs_buildpack
+      readiness-health-check-type: http
+      readiness-health-check-http-endpoint: /health
+      disk-quota: 1024M
+      memory: 256M
+    build-parameters:
+      builder: npm
+    provides:
+      - name: srv-api # required by consumers of CAP services (e.g. approuter)
+        properties:
+          srv-url: ${default-url}
+    requires:
+      - name: primeiro-projeto-db
+      - name: primeiro-projeto-auth
+      - name: primeiro-projeto-destination
+
+  - name: primeiro-projeto-db-deployer
+    type: hdb
+    path: gen/db
+    parameters:
+      buildpack: nodejs_buildpack
+    requires:
+      - name: primeiro-projeto-db
+
+  - name: primeiro-projeto-destinations
+    type: com.sap.application.content
+    requires:
+      - name: primeiro-projeto-auth
+        parameters:
+          service-key:
+            name: primeiro-projeto-auth-key
+      - name: primeiro-projeto-html5-repo-host
+        parameters:
+          service-key:
+            name: primeiro-projeto-html5-repo-host-key
+      - name: srv-api
+      - name: primeiro-projeto-destination
+        parameters:
+          content-target: true
+    parameters:
+      content:
+        instance:
+          destinations:
+            - Authentication: OAuth2UserTokenExchange
+              HTML5.Timeout: 120000
+              Name: primeiro-projeto-srv
+              TokenServiceInstanceName: primeiro-projeto-auth
+              TokenServiceKeyName: primeiro-projeto-auth-key
+              URL: ~{srv-api/srv-url}
+              sap.cloud.service: primeiro-projeto.service
+            - Name: primeiro-projeto-html5-repo-host
+              ServiceInstanceName: primeiro-projeto-html5-repo-host
+              ServiceKeyName: primeiro-projeto-html5-repo-host-key
+              sap.cloud.service: primeiro-projeto.service
+            - Authentication: OAuth2UserTokenExchange
+              Name: primeiro-projeto-auth
+              ServiceInstanceName: primeiro-projeto-auth
+              ServiceKeyName: primeiro-projeto-auth-key
+              sap.cloud.service: primeiro-projeto.service
+          existing_destinations_policy: ignore
+    build-parameters:
+      no-source: true
+
+  - name: primeiro-projeto-app-deployer
+    type: com.sap.application.content
+    path: gen
+    requires:
+      - name: primeiro-projeto-html5-repo-host
+        parameters:
+          content-target: true
+    build-parameters:
+      build-result: app/
+      requires:
+        - name: primeiroprojetofornecedores
+          artifacts:
+            - fornecedores.zip
+          target-path: app/
+        - name: primeiroprojetoorder
+          artifacts:
+            - order.zip
+          target-path: app/
+        - name: primeiroprojetoprodutos
+          artifacts:
+            - produtos.zip
+          target-path: app/
+
+  - name: primeiroprojetofornecedores
+    type: html5
+    path: app/fornecedores
+    build-parameters:
+      build-result: dist
+      builder: custom
+      commands:
+        - npm ci
+        - npm run build
+      supported-platforms:
+        []
+  - name: primeiroprojetoorder
+    type: html5
+    path: app/order
+    build-parameters:
+      build-result: dist
+      builder: custom
+      commands:
+        - npm ci
+        - npm run build
+      supported-platforms:
+        []
+  - name: primeiroprojetoprodutos
+    type: html5
+    path: app/produtos
+    build-parameters:
+      build-result: dist
+      builder: custom
+      commands:
+        - npm ci
+        - npm run build
+      supported-platforms:
+        []
+
+resources:
+  - name: primeiro-projeto-db
+    type: com.sap.xs.hdi-container
+    parameters:
+      service: hana
+      service-plan: hdi-shared
+  - name: primeiro-projeto-html5-repo-host
+    type: org.cloudfoundry.managed-service
+    parameters:
+      service: html5-apps-repo
+      service-plan: app-host
+  - name: primeiro-projeto-auth
+    type: org.cloudfoundry.managed-service
+    parameters:
+      service: xsuaa
+      service-plan: application
+      path: ./xs-security.json
+      config:
+        xsappname: primeiro-projeto-${org}-${space}
+        tenant-mode: dedicated
+  - name: primeiro-projeto-destination
+    type: org.cloudfoundry.managed-service
+    parameters:
+      service: destination
+      service-plan: lite
+      config:
+        HTML5Runtime_enabled: true
+        init_data:
+          instance:
+            existing_destinations_policy: update
+            destinations:
+              - Name: ui5
+                URL: https://ui5.sap.com
+                Authentication: NoAuthentication
+                Type: HTTP
+                ProxyType: Internet
