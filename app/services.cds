@@ -1,9 +1,6 @@
+using from './produto/annotations';
+using from './fornecedor/annotations';
+using from './purchase.order/annotations';
 
-using from './produtos/annotations';
-
-using from './fornecedores/annotations';
-
-using from './order/annotations';
-using from './order/annotations_se';
-
-using from './order/value-helps';
+using from './purchase.order/annotations_se';
+using from './purchase.order/value-helps';

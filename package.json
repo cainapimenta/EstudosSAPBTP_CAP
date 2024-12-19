@@ -6,34 +6,65 @@
   "license": "UNLICENSED",
   "private": true,
   "dependencies": {
+    "@cap-js/hana": "^1.5.2",
     "@sap/cds": "^8",
-    "express": "^4",
-    "@cap-js/hana": "^1",
-    "@sap/xssec": "^4"
+    "@sap/xssec": "^4",
+    "express": "^4"
   },
   "devDependencies": {
     "@cap-js/cds-types": "^0.7.0",
     "@cap-js/sqlite": "^1",
-    "@sap/cds-dk": "^8"
+    "@sap/cds-dk": "^8",
+    "mbt": "^1.2.29",
+    "rimraf": "^5.0.5"
   },
   "scripts": {
     "start": "cds-serve",
     "watch-produtos": "cds watch --open produtos/webapp/index.html?sap-ui-xx-viewCache=false",
-    "watch-fornecedores": "cds watch --open fornecedores/webapp/index.html?sap-ui-xx-viewCache=false"
+    "watch-fornecedores": "cds watch --open fornecedores/webapp/index.html?sap-ui-xx-viewCache=false",
+    "undeploy": "cf undeploy primeiro-projeto --delete-services --delete-service-keys --delete-service-brokers",
+    "build": "rimraf resources mta_archives && mbt build --mtar archive",
+    "deploy": "cf deploy mta_archives/archive.mtar --retries 1",
+    "watch-order": "cds watch --open order/webapp/index.html?sap-ui-xx-viewCache=false",
+    "watch-produto": "cds watch --open produto/webapp/index.html?sap-ui-xx-viewCache=false",
+    "watch-fornecedor": "cds watch --open fornecedor/webapp/index.html?sap-ui-xx-viewCache=false",
+    "watch-purchase.order": "cds watch --open purchase.order/webapp/index.html?sap-ui-xx-viewCache=false"
   },
   "sapux": [
     "app/produtos",
-    "app/fornecedores"
+    "app/fornecedor",
+    "app/purchase.order"
   ],
   "cds": {
     "sql": {
-      "native_hana_associations": false
+      "native_hana_associations": true
     },
     "requires": {
-      "[production]": {
-        "html5-repo": true,
-        "auth": "xsuaa"
+      "db": {
+        "[development]": {
+          "model": "db/sqlite"
+        },
+        "[production]": {
+          "model": "db/hana",
+          "auth": "xsuaa",
+          "html5-repo": true,
+          "destination": true
+        }
+      },
+      "db-ext": {
+        "[development]": {
+          "model": "db/sqlite"
+        },
+        "[production]": {
+          "model": "db/hana",
+          "auth": "xsuaa",
+          "html5-repo": true,
+          "destination": true
+        }
       }
+    },
+    "hana": {
+      "deploy-format": "hdbtable"
     }
   }
 }
