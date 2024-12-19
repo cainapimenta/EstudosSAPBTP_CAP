@@ -5,10 +5,20 @@ class OrderService extends cds.ApplicationService {
 		const {
 			OrderHeader,
 			OrderItens,
-			Produtos
+			Produto
 		} = this.entities;
 
 		this.before('UPDATE', OrderItens.drafts, async req => {
+
+			if (req.data.item_code) {
+				const item = await SELECT.one(x => { x.name }).from(Produto).where({ code: req.data.item_code });
+
+				console.log(item);
+
+				req.data.item_name = item.name;
+			}
+
+
 			if (req.data.quantity || req.data.unitCost) {
 				const orderItem = await SELECT.from(OrderItens.drafts, req.data.ID);
 
