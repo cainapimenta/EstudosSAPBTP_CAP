@@ -13,8 +13,6 @@ class OrderService extends cds.ApplicationService {
 			if (req.data.item_code) {
 				const item = await SELECT.one(x => { x.name }).from(Produto).where({ code: req.data.item_code });
 
-				console.log(item);
-
 				req.data.item_name = item.name;
 			}
 
